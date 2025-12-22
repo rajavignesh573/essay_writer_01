@@ -29,7 +29,7 @@ This guide will walk you through deploying your Next.js application to Vercel.
 
 3. **Import your Git repository**
    - Select your Git provider (GitHub, GitLab, or Bitbucket)
-   - Choose the `blog2post` repository
+   - Choose your repository (e.g., `essay_writer_01` or your actual repo name)
    - Click "Import"
 
 4. **Configure your project**
@@ -50,7 +50,7 @@ This guide will walk you through deploying your Next.js application to Vercel.
    | `OPENAI_API_KEY` | Your OpenAI API key | Get from OpenAI Dashboard |
    | `STRIPE_SECRET_KEY` | Your Stripe secret key | Get from Stripe Dashboard > Developers > API keys (use the secret key, not publishable) |
    | `STRIPE_WEBHOOK_SECRET` | Your Stripe webhook secret | You'll get this after setting up the webhook (see Step 4) |
-   | `NEXT_PUBLIC_SITE_URL` | Your Vercel deployment URL | Will be `https://your-project.vercel.app` (update after first deployment) |
+   | `NEXT_PUBLIC_SITE_URL` | Your Vercel deployment URL | Used for OAuth redirects. You can leave this empty initially, then set it to `https://your-project.vercel.app` after first deployment (see Step 3) |
 
 6. **Click "Deploy"**
 
@@ -87,12 +87,18 @@ This guide will walk you through deploying your Next.js application to Vercel.
 
 After your first deployment, you'll get a URL like `https://your-project.vercel.app`.
 
+**Why `NEXT_PUBLIC_SITE_URL` is needed:**
+- This tells Supabase where to redirect users after OAuth login
+- It's used in the login page to set the redirect URL
+- Without it, OAuth redirects won't work properly
+
 1. **Go to Vercel Dashboard > Your Project > Settings > Environment Variables**
 
-2. **Update `NEXT_PUBLIC_SITE_URL`** to your actual Vercel URL:
+2. **Add or Update `NEXT_PUBLIC_SITE_URL`** to your actual Vercel URL:
    ```
    https://your-project.vercel.app
    ```
+   (Replace `your-project` with your actual project name from Vercel)
 
 3. **Redeploy** (or it will auto-redeploy if you have auto-deploy enabled)
 
