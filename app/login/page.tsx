@@ -11,6 +11,9 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
 
+  // Get the site URL dynamically - use env variable if set, otherwise use current origin
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
+
   useEffect(() => {
     setMounted(true)
     const checkUser = async () => {
@@ -41,7 +44,7 @@ export default function LoginPage() {
           supabaseClient={supabase}
           appearance={{ theme: ThemeSupa }}
           providers={['google']}
-          redirectTo={`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard`}
+          redirectTo={`${siteUrl}/dashboard`}
         />
       </div>
     </div>
