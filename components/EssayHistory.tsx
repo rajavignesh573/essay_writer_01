@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import Navbar from './Navbar'
 import { format } from 'date-fns'
-import { Download, Edit, Copy, Check, Trash2 } from 'lucide-react'
+import { Download, Edit, Copy, Check, ChevronLeft, ChevronRight, History } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 interface Essay {
   id: string
@@ -16,9 +17,15 @@ interface Essay {
 
 interface EssayHistoryProps {
   essays: Essay[]
+  currentPage?: number
+  totalPages?: number
 }
 
-export default function EssayHistory({ essays }: EssayHistoryProps) {
+export default function EssayHistory({
+  essays,
+  currentPage = 1,
+  totalPages = 1,
+}: EssayHistoryProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editedContent, setEditedContent] = useState<{ [key: string]: string }>({})
@@ -74,10 +81,17 @@ export default function EssayHistory({ essays }: EssayHistoryProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 no-select">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50/30 no-select">
       <Navbar />
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Essay History</h1>
+        <div className="flex items-center space-x-3 mb-8">
+          <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+            <History className="w-7 h-7 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Essay History
+          </h1>
+        </div>
         {essays.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <p className="text-gray-500 text-lg">No essays yet. Start writing your first essay!</p>
@@ -85,7 +99,7 @@ export default function EssayHistory({ essays }: EssayHistoryProps) {
         ) : (
           <div className="space-y-4">
             {essays.map((essay) => (
-              <div key={essay.id} className="bg-white rounded-lg shadow-sm p-6">
+              <div key={essay.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">{essay.prompt}</h3>
@@ -98,13 +112,13 @@ export default function EssayHistory({ essays }: EssayHistoryProps) {
                       <>
                         <button
                           onClick={() => handleSave(essay.id)}
-                          className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+                          className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 shadow-md transition-all"
                         >
                           Save
                         </button>
                         <button
                           onClick={handleCancel}
-                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                          className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                         >
                           Cancel
                         </button>
@@ -113,14 +127,14 @@ export default function EssayHistory({ essays }: EssayHistoryProps) {
                       <>
                         <button
                           onClick={() => handleEdit(essay)}
-                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                          className="inline-flex items-center px-3 py-2 text-sm font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                         >
                           <Edit className="w-4 h-4 mr-1" />
                           Edit
                         </button>
                         <button
                           onClick={() => handleCopy(essay.content, essay.id)}
-                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                          className="inline-flex items-center px-3 py-2 text-sm font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                         >
                           {copiedId === essay.id ? (
                             <>
@@ -136,7 +150,7 @@ export default function EssayHistory({ essays }: EssayHistoryProps) {
                         </button>
                         <button
                           onClick={() => handleDownload(essay.content, essay.prompt, essay.created_at)}
-                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+                          className="inline-flex items-center px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 shadow-md transition-all"
                         >
                           <Download className="w-4 h-4 mr-1" />
                           Download
@@ -160,6 +174,37 @@ export default function EssayHistory({ essays }: EssayHistoryProps) {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-8 flex justify-center items-center space-x-4">
+            <Link
+              href={`/history?page=${Math.max(1, currentPage - 1)}`}
+              className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg ${
+                currentPage === 1
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+              }`}
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Previous
+            </Link>
+            <span className="text-sm text-gray-700">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Link
+              href={`/history?page=${Math.min(totalPages, currentPage + 1)}`}
+              className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg ${
+                currentPage === totalPages
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+              }`}
+            >
+              Next
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Link>
           </div>
         )}
       </div>

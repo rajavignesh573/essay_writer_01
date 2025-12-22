@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { stripe, PRICING_PLANS } from '@/lib/stripe'
+import { validatePlanType } from '@/lib/utils/validation'
+import { formatErrorResponse, logError, AuthenticationError, ValidationError } from '@/lib/utils/errors'
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,27 +12,45 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError()
     }
 
-    const { planType } = await request.json()
-
-    if (!planType || !['monthly', 'annual'].includes(planType)) {
-      return NextResponse.json({ error: 'Invalid plan type' }, { status: 400 })
+    // Parse and validate request body
+    let body
+    try {
+      body = await request.json()
+    } catch {
+      throw new ValidationError('Invalid JSON in request body')
     }
 
-    const plan = PRICING_PLANS[planType as keyof typeof PRICING_PLANS]
+    const { planType } = body
 
-    // Get user email
-    const { data: profile } = await supabase
+    if (!validatePlanType(planType)) {
+      throw new ValidationError('Invalid plan type. Must be "monthly" or "annual"')
+    }
+
+    const plan = PRICING_PLANS[planType]
+
+    // Get user email (with error handling)
+    const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('email')
       .eq('id', user.id)
       .single()
 
+    if (profileError && profileError.code !== 'PGRST116') {
+      logError(profileError, { userId: user.id, action: 'get_profile_for_checkout' })
+    }
+
+    const customerEmail = profile?.email || user.email
+
+    if (!customerEmail) {
+      throw new ValidationError('User email is required for checkout')
+    }
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
-      customer_email: profile?.email || user.email,
+      customer_email: customerEmail,
       payment_method_types: ['card'],
       line_items: [
         {
@@ -56,10 +76,15 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    if (!session.url) {
+      throw new Error('Failed to create checkout session URL')
+    }
+
     return NextResponse.json({ url: session.url })
   } catch (error) {
-    console.error('Error creating checkout session:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const errorResponse = formatErrorResponse(error)
+    logError(error, { endpoint: '/api/create-checkout', method: 'POST' })
+    return NextResponse.json(errorResponse, { status: errorResponse.statusCode })
   }
 }
 

@@ -5,6 +5,7 @@ import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { FileText } from 'lucide-react'
 
 export default function LoginPage() {
   const [mounted, setMounted] = useState(false)
@@ -36,16 +37,38 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
-        <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">Essay Writer</h1>
-        <p className="text-center text-gray-600 mb-8">Sign in to get started</p>
-        <Auth
-          supabaseClient={supabase}
-          appearance={{ theme: ThemeSupa }}
-          providers={['google']}
-          redirectTo={`${siteUrl}/dashboard`}
-        />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-4">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl mb-4 shadow-lg">
+            <FileText className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Essay Writer
+          </h1>
+          <p className="text-lg text-gray-600">Sign in to start writing amazing essays</p>
+        </div>
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          <Auth
+            supabaseClient={supabase}
+            appearance={{
+              theme: ThemeSupa,
+              variables: {
+                default: {
+                  colors: {
+                    brand: '#4f46e5',
+                    brandAccent: '#4338ca',
+                  },
+                },
+              },
+            }}
+            providers={['google']}
+            redirectTo={`${siteUrl}/dashboard`}
+          />
+        </div>
+        <p className="text-center text-sm text-gray-500 mt-6">
+          By signing in, you agree to our Terms of Service and Privacy Policy
+        </p>
       </div>
     </div>
   )

@@ -1,6 +1,12 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import EssayWriter from '@/components/EssayWriter'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Dashboard - Essay Writer',
+  description: 'Generate AI-powered essays with ease',
+}
 
 export default async function DashboardPage() {
   const supabase = createServerSupabaseClient()

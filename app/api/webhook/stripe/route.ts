@@ -1,22 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, PRICING_PLANS } from '@/lib/stripe'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { logError } from '@/lib/utils/errors'
 import Stripe from 'stripe'
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
-  const signature = request.headers.get('stripe-signature')!
+  const signature = request.headers.get('stripe-signature')
+
+  if (!signature) {
+    logError(new Error('Missing Stripe signature'), { endpoint: '/api/webhook/stripe' })
+    return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
+  }
+
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    logError(new Error('STRIPE_WEBHOOK_SECRET not configured'), { endpoint: '/api/webhook/stripe' })
+    return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 })
+  }
 
   let event: Stripe.Event
 
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    )
+    event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET)
   } catch (err) {
-    console.error('Webhook signature verification failed:', err)
+    logError(err, { endpoint: '/api/webhook/stripe', action: 'signature_verification' })
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
@@ -139,7 +146,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('Webhook processing error:', error)
+    logError(error, {
+      endpoint: '/api/webhook/stripe',
+      eventType: event.type,
+      eventId: event.id,
+    })
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 })
   }
 }

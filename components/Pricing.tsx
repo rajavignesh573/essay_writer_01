@@ -34,17 +34,24 @@ export default function Pricing() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50/30">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Choose Your Plan</h1>
-          <p className="text-xl text-gray-600">Get unlimited essay generation with our flexible plans</p>
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl mb-6 shadow-lg">
+            <Check className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Choose Your Plan
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Get unlimited essay generation with our flexible plans. Start with 2 free credits.
+          </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {/* Monthly Plan */}
-          <div className="bg-white rounded-lg shadow-lg p-8 border-2 border-gray-200">
+          <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-gray-200 hover:border-indigo-300 transition-all hover:shadow-2xl">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Monthly Plan</h2>
               <div className="text-4xl font-bold text-indigo-600 mb-1">$19</div>
@@ -71,7 +78,7 @@ export default function Pricing() {
             <button
               onClick={() => handleSubscribe('monthly')}
               disabled={loading !== null}
-              className="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all disabled:transform-none"
             >
               {loading === 'monthly' ? (
                 <>
@@ -85,7 +92,7 @@ export default function Pricing() {
           </div>
 
           {/* Annual Plan */}
-          <div className="bg-white rounded-lg shadow-lg p-8 border-2 border-indigo-500 relative">
+          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl shadow-xl p-8 border-2 border-indigo-500 relative hover:shadow-2xl transition-all">
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <span className="bg-indigo-600 text-white px-4 py-1 rounded-full text-sm font-medium">
                 Best Value
@@ -118,7 +125,7 @@ export default function Pricing() {
             <button
               onClick={() => handleSubscribe('annual')}
               disabled={loading !== null}
-              className="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all disabled:transform-none"
             >
               {loading === 'annual' ? (
                 <>

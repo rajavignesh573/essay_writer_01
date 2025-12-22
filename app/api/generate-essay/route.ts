@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { generateEssay } from '@/lib/openai'
+import { validatePrompt, sanitizePrompt } from '@/lib/utils/validation'
+import { rateLimit, getRateLimitIdentifier } from '@/lib/utils/rate-limit'
+import { withTimeout } from '@/lib/utils/timeout'
+import { formatErrorResponse, logError, AuthenticationError, ValidationError, AuthorizationError } from '@/lib/utils/errors'
+
+const ESSAY_GENERATION_TIMEOUT = 60000 // 60 seconds
+const RATE_LIMIT_WINDOW = 60000 // 1 minute
+const RATE_LIMIT_MAX = 5 // 5 essays per minute per user
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,16 +18,52 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new AuthenticationError()
     }
 
-    const { prompt } = await request.json()
+    // Rate limiting
+    const rateLimitId = getRateLimitIdentifier(request, user.id)
+    const rateLimitResult = rateLimit(rateLimitId, {
+      windowMs: RATE_LIMIT_WINDOW,
+      maxRequests: RATE_LIMIT_MAX,
+    })
 
-    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
-      return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Too many requests. Please wait before generating another essay.',
+          resetTime: rateLimitResult.resetTime,
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+            'X-RateLimit-Remaining': String(rateLimitResult.remaining),
+            'X-RateLimit-Reset': String(rateLimitResult.resetTime),
+          },
+        }
+      )
     }
 
-    // Check user credits
+    // Parse and validate request body
+    let body
+    try {
+      body = await request.json()
+    } catch {
+      throw new ValidationError('Invalid JSON in request body')
+    }
+
+    const { prompt } = body
+
+    // Validate prompt
+    const validation = validatePrompt(prompt)
+    if (!validation.valid) {
+      throw new ValidationError(validation.error || 'Invalid prompt')
+    }
+
+    const sanitizedPrompt = sanitizePrompt(prompt)
+
+    // Check user credits and get profile in one query
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('credits')
@@ -27,24 +71,37 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (profileError || !profile) {
+      logError(profileError, { userId: user.id, action: 'get_profile' })
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
     }
 
     if (profile.credits < 1) {
-      return NextResponse.json({ error: 'Insufficient credits' }, { status: 403 })
+      throw new AuthorizationError('Insufficient credits')
     }
 
-    // Generate essay
-    const essayContent = await generateEssay(prompt)
+    // Generate essay with timeout
+    const essayContent = await withTimeout(
+      generateEssay(sanitizedPrompt),
+      ESSAY_GENERATION_TIMEOUT,
+      'Essay generation timed out'
+    )
 
-    // Deduct credit
-    const { error: creditError } = await supabase
+    // Use transaction-like approach: update credits and save essay
+    // First, try to deduct credit atomically
+    const { data: updatedProfile, error: creditError } = await supabase
       .from('user_profiles')
       .update({ credits: profile.credits - 1 })
       .eq('id', user.id)
+      .eq('credits', profile.credits) // Optimistic locking to prevent race conditions
+      .select('credits')
+      .single()
 
-    if (creditError) {
-      return NextResponse.json({ error: 'Failed to update credits' }, { status: 500 })
+    if (creditError || !updatedProfile) {
+      logError(creditError, { userId: user.id, credits: profile.credits })
+      return NextResponse.json(
+        { error: 'Failed to update credits. Please try again.' },
+        { status: 500 }
+      )
     }
 
     // Save essay to database
@@ -52,27 +109,49 @@ export async function POST(request: NextRequest) {
       .from('essays')
       .insert({
         user_id: user.id,
-        prompt: prompt.trim(),
+        prompt: sanitizedPrompt,
         content: essayContent,
       })
       .select()
       .single()
 
     if (essayError) {
+      // Rollback credit if essay save fails
+      await supabase
+        .from('user_profiles')
+        .update({ credits: profile.credits })
+        .eq('id', user.id)
+
+      logError(essayError, { userId: user.id, prompt: sanitizedPrompt })
       return NextResponse.json({ error: 'Failed to save essay' }, { status: 500 })
     }
 
-    // Log activity
-    await supabase.rpc('log_activity', {
+    // Log activity (non-blocking)
+    supabase.rpc('log_activity', {
       p_user_id: user.id,
       p_action_type: 'essay_generated',
-      p_details: { essay_id: essay.id, prompt: prompt.trim() },
+      p_details: { essay_id: essay.id, prompt: sanitizedPrompt },
+    }).catch((err) => {
+      logError(err, { userId: user.id, action: 'log_activity' })
     })
 
-    return NextResponse.json({ essay, credits: profile.credits - 1 })
+    return NextResponse.json(
+      {
+        essay,
+        credits: updatedProfile.credits,
+      },
+      {
+        headers: {
+          'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+          'X-RateLimit-Remaining': String(rateLimitResult.remaining),
+          'X-RateLimit-Reset': String(rateLimitResult.resetTime),
+        },
+      }
+    )
   } catch (error) {
-    console.error('Error generating essay:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const errorResponse = formatErrorResponse(error)
+    logError(error, { endpoint: '/api/generate-essay', method: 'POST' })
+    return NextResponse.json(errorResponse, { status: errorResponse.statusCode })
   }
 }
 
