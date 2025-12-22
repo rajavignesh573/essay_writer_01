@@ -127,13 +127,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Log activity (non-blocking)
-    supabase.rpc('log_activity', {
-      p_user_id: user.id,
-      p_action_type: 'essay_generated',
-      p_details: { essay_id: essay.id, prompt: sanitizedPrompt },
-    }).catch((err) => {
-      logError(err, { userId: user.id, action: 'log_activity' })
-    })
+    ;(async () => {
+      try {
+        await supabase.rpc('log_activity', {
+          p_user_id: user.id,
+          p_action_type: 'essay_generated',
+          p_details: { essay_id: essay.id, prompt: sanitizedPrompt },
+        })
+      } catch (err) {
+        logError(err, { userId: user.id, action: 'log_activity' })
+      }
+    })()
 
     return NextResponse.json(
       {
