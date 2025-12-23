@@ -69,6 +69,11 @@ export default function LoginPage() {
           </h1>
           <p className="text-lg text-gray-600">Sign in to start writing amazing essays</p>
         </div>
+        {errorMessage && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            {errorMessage}
+          </div>
+        )}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           <Auth
             supabaseClient={supabase}
@@ -84,7 +89,7 @@ export default function LoginPage() {
               },
             }}
             providers={['google']}
-            redirectTo={`${siteUrl}/dashboard`}
+            redirectTo={`${siteUrl}/auth/callback?next=/dashboard`}
           />
         </div>
         <p className="text-center text-sm text-gray-500 mt-6">
