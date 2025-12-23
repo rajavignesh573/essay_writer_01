@@ -3,9 +3,18 @@ import { redirect } from 'next/navigation'
 import EssayHistory from '@/components/EssayHistory'
 import type { Metadata } from 'next'
 
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://essay-writer-01.vercel.app'
+
 export const metadata: Metadata = {
   title: 'Essay History - Essay Writer',
-  description: 'View and manage your generated essays',
+  description: 'View and manage all your generated essays. Access your writing history, edit essays, and download them in your preferred format.',
+  robots: {
+    index: false,
+    follow: false,
+  },
+  alternates: {
+    canonical: `${baseUrl}/history`,
+  },
 }
 
 const ESSAYS_PER_PAGE = 20

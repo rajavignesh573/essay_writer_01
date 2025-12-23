@@ -3,29 +3,43 @@
 import { createClient } from '@/lib/supabase/client'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { FileText } from 'lucide-react'
 
 export default function LoginPage() {
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   // Get the site URL dynamically - use env variable if set, otherwise use current origin
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
+  const siteUrl = useMemo(
+    () => process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'),
+    []
+  )
 
   useEffect(() => {
     setMounted(true)
+    let isMounted = true
+
     const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user) {
-        router.push('/dashboard')
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        if (isMounted && user) {
+          router.replace('/dashboard')
+        }
+      } catch (error) {
+        console.error('Error checking user:', error)
       }
     }
+    
     checkUser()
+
+    return () => {
+      isMounted = false
+    }
   }, [supabase, router])
 
   if (!mounted) {

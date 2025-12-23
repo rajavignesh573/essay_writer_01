@@ -3,11 +3,49 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { FileText, Zap, Shield, Clock, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react'
 import type { Metadata } from 'next'
+import { seoConfig } from '@/lib/seo/config'
+
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://essay-writer-01.vercel.app'
 
 export const metadata: Metadata = {
   title: 'Essay Writer - AI-Powered Essay Generation | Professional Writing Assistant',
-  description: 'Generate high-quality essays instantly with AI. Perfect for students and professionals. Start with 2 free credits.',
-  keywords: 'essay writer, AI essay generator, writing assistant, essay help',
+  description: 'Generate high-quality, well-structured essays instantly with AI. Perfect for students and professionals. Start with 2 free credits. Powered by GPT-4o-mini for exceptional writing quality.',
+  keywords: [
+    'essay writer',
+    'AI essay generator',
+    'writing assistant',
+    'essay help',
+    'academic writing',
+    'essay writing tool',
+    'AI writing',
+    'essay generator free',
+    'online essay writer',
+  ],
+  openGraph: {
+    title: 'Essay Writer - AI-Powered Essay Generation',
+    description: 'Generate high-quality, well-structured essays instantly with AI. Perfect for students and professionals. Start with 2 free credits.',
+    url: baseUrl,
+    siteName: 'Essay Writer',
+    images: [
+      {
+        url: `${baseUrl}/opengraph-image`,
+        width: 1200,
+        height: 630,
+        alt: 'Essay Writer - AI-Powered Essay Generation',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Essay Writer - AI-Powered Essay Generation',
+    description: 'Generate high-quality essays instantly with AI. Start with 2 free credits.',
+    images: [`${baseUrl}/opengraph-image`],
+  },
+  alternates: {
+    canonical: baseUrl,
+  },
 }
 
 export default async function Home() {
@@ -23,8 +61,65 @@ export default async function Home() {
 
   // Show landing page to unauthenticated users
 
+  // Structured Data for SEO
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: seoConfig.organization.name,
+    applicationCategory: 'EducationalApplication',
+    operatingSystem: 'Web',
+    url: baseUrl,
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+      description: 'Start with 2 free credits',
+    },
+    ...(seoConfig.ratings.useRealData && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: seoConfig.ratings.value.toString(),
+        ratingCount: seoConfig.ratings.count.toString(),
+      },
+    }),
+    description: 'AI-powered essay writing tool that generates high-quality, well-structured essays instantly.',
+    featureList: [
+      'AI-Powered Essay Generation',
+      'High-Quality Writing',
+      'Secure & Private',
+      'Edit & Download',
+    ],
+    screenshot: `${baseUrl}/opengraph-image`,
+  }
+
+  // Organization Structured Data
+  const organizationData = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: seoConfig.organization.name,
+    url: seoConfig.organization.url,
+    logo: seoConfig.organization.logo,
+    description: 'AI-powered essay writing tool for students and professionals',
+    ...(seoConfig.social.twitter && {
+      sameAs: [
+        ...(seoConfig.social.twitter ? [`https://twitter.com/${seoConfig.social.twitter.replace('@', '')}`] : []),
+        ...(seoConfig.social.facebook ? [seoConfig.social.facebook] : []),
+        ...(seoConfig.social.linkedin ? [seoConfig.social.linkedin] : []),
+        ...(seoConfig.social.instagram ? [`https://instagram.com/${seoConfig.social.instagram.replace('@', '')}`] : []),
+      ].filter(Boolean),
+    }),
+  }
+
   return (
     <div className="min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationData) }}
+      />
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -39,6 +134,12 @@ export default async function Home() {
             </div>
             <div className="flex items-center space-x-4">
               <Link
+                href="/blog"
+                className="text-gray-700 hover:text-indigo-600 font-medium transition-colors"
+              >
+                Blog
+              </Link>
+              <Link
                 href="/pricing"
                 className="text-gray-700 hover:text-indigo-600 font-medium transition-colors"
               >
@@ -46,6 +147,7 @@ export default async function Home() {
               </Link>
               <Link
                 href="/login"
+                prefetch={true}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm hover:shadow-md"
               >
                 Get Started
@@ -77,6 +179,7 @@ export default async function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
                 href="/login"
+                prefetch={true}
                 className="group px-8 py-4 bg-indigo-600 text-white rounded-xl font-semibold text-lg hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center space-x-2"
               >
                 <span>Start Writing Free</span>
@@ -84,6 +187,7 @@ export default async function Home() {
               </Link>
               <Link
                 href="/pricing"
+                prefetch={true}
                 className="px-8 py-4 bg-white text-indigo-600 rounded-xl font-semibold text-lg border-2 border-indigo-600 hover:bg-indigo-50 transition-all"
               >
                 View Pricing
@@ -292,10 +396,13 @@ export default async function Home() {
               <span className="text-xl font-bold text-white">Essay Writer</span>
             </div>
             <div className="flex space-x-6">
+              <Link href="/blog" className="hover:text-white transition-colors">
+                Blog
+              </Link>
               <Link href="/pricing" className="hover:text-white transition-colors">
                 Pricing
               </Link>
-              <Link href="/login" className="hover:text-white transition-colors">
+              <Link href="/login" prefetch={true} className="hover:text-white transition-colors">
                 Login
               </Link>
             </div>

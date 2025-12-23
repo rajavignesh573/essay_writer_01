@@ -3,9 +3,18 @@ import { redirect } from 'next/navigation'
 import EssayWriter from '@/components/EssayWriter'
 import type { Metadata } from 'next'
 
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://essay-writer-01.vercel.app'
+
 export const metadata: Metadata = {
   title: 'Dashboard - Essay Writer',
-  description: 'Generate AI-powered essays with ease',
+  description: 'Generate AI-powered essays with ease. Create high-quality, well-structured essays in seconds using our advanced AI writing assistant.',
+  robots: {
+    index: false,
+    follow: false,
+  },
+  alternates: {
+    canonical: `${baseUrl}/dashboard`,
+  },
 }
 
 export default async function DashboardPage() {
