@@ -9,6 +9,7 @@ import { FileText } from 'lucide-react'
 
 export default function LoginPage() {
   const [mounted, setMounted] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
@@ -28,6 +29,35 @@ export default function LoginPage() {
   useEffect(() => {
     setMounted(true)
     let isMounted = true
+
+    // Check for error in URL
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const error = params.get('error')
+      const description = params.get('description')
+      
+      if (error) {
+        let message = 'Authentication failed. Please try again.'
+        
+        if (error === 'access_denied') {
+          message = 'Access denied. Please allow access to continue.'
+        } else if (error === 'no_code') {
+          message = 'No authorization code received. Please try again.'
+        } else if (error === 'auth_failed' || error === 'authentication_failed') {
+          message = 'Authentication failed. Please check your Supabase and Google OAuth configuration.'
+        } else if (description) {
+          message = decodeURIComponent(description)
+        }
+        
+        setErrorMessage(message)
+        
+        // Clear error from URL
+        const newUrl = new URL(window.location.href)
+        newUrl.searchParams.delete('error')
+        newUrl.searchParams.delete('description')
+        window.history.replaceState({}, '', newUrl.toString())
+      }
+    }
 
     const checkUser = async () => {
       try {
