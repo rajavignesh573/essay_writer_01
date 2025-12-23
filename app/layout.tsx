@@ -69,7 +69,8 @@ export const metadata: Metadata = {
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
     yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,
-    bing: process.env.NEXT_PUBLIC_BING_VERIFICATION,
+    // Note: Bing verification is not supported in Next.js Verification type
+    // If needed, add it manually via custom meta tags in the head
   },
   viewport: {
     width: 'device-width',
