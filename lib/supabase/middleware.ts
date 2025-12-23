@@ -45,11 +45,14 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirect unauthenticated users to login (except for login and auth routes)
+  // Redirect unauthenticated users to login (except for root, login, auth, and pricing routes)
+  // Allow root path (/) for landing page, pricing for public viewing
   if (
     !user &&
+    request.nextUrl.pathname !== '/' &&
     !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth')
+    !request.nextUrl.pathname.startsWith('/auth') &&
+    !request.nextUrl.pathname.startsWith('/pricing')
   ) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
