@@ -12,9 +12,16 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
-  // Get the site URL dynamically - use env variable if set, otherwise use current origin
+  // Get the site URL dynamically - always use current origin to support multiple domains
+  // This ensures OAuth redirects work correctly for both vercel.app and custom domains
   const siteUrl = useMemo(
-    () => process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'),
+    () => {
+      if (typeof window !== 'undefined') {
+        return window.location.origin
+      }
+      // Fallback for SSR (shouldn't happen in client component, but just in case)
+      return process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    },
     []
   )
 
